@@ -1,0 +1,2 @@
+# PSLynchealthCheck
+HealthCheck for Lync
