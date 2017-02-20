@@ -71,6 +71,11 @@ TR:nth-child(odd) {background-color :lightgray}
 .sqlservices h2 {background:$brand2color; color:white;padding:10px; margin:0;font-size: 12pt;}
 .sqlservices h3 {padding:0px; margin:0px;font-size: 10pt; margin-top: 5px}
 
+.addressservices {min-height: 300px; border-width: 2px; border-style: solid; border-color: $brand2color; vertical-align :top; margin: 10px; width: 700px; display: inline-block; position:relative;border-top-right-radius: 7px; border-top-left-radius: 7px; border-bottom-right-radius: 2px; border-bottom-left-radius: 2px; background-color: #F0F0F0 }
+.addressservices h2 {background:$brand2color; color:white;padding:10px; margin:0;font-size: 12pt;}
+.addressservices h3 {padding:0px; margin:0px;font-size: 10pt; margin-top: 5px}
+
+
 .servergraphic { position:absolute; bottom:-10px; right:-20px; height: 50px} 
 
 .subtitle { font-size: 8pt; font-style: oblique; }
@@ -414,6 +419,26 @@ function BuildCSIMTable(){
     return $ReturnHTML
 
 }
+
+
+function BuildCSAddressBookTable(){
+    $ReturnHTML = "<table><tr><th>Pool</th><th>Completed</th><th>URI</th></tr>"
+    $PoolsWithTestAccounts = Get-CsHealthMonitoringConfiguration
+    foreach ($dbpool in $PoolsWithTestAccounts.identity){
+        $ServerOK = Test-CsAddressBookService -TargetFqdn $dbpool
+        If ($ServerOK.Result -like "Success") { 
+            $ComputerTDclass = "computer_pass"
+        } else {
+            $ComputerTDclass = "computer_fail"
+        }
+        $strHTMLComputer = $dbpool
+        $ReturnHTML += "<tr><td>$strHTMLComputer</td><td class='$ComputerTDclass'>$($ServerOk.result)</td><td><div style='word-break:break-all;'>$($ServerOk.TargetURI)</div></td></tr>"
+    } # end for each
+    $ReturnHTML += "</table>"
+    return $ReturnHTML
+
+}
+
 #endregion
 
 
@@ -562,7 +587,7 @@ Write-host "Checking Communications within the environment.." -ForegroundColor Y
 $HealthHTML = "<H3>Lync Communications Check</h3>"
 $HealthHTML += "<h5 class='subtitle'>Are communications between the two test accounts working?</h5>"
 
-$HealthHTML += "<div class='connectivity_Container'>"
+$HealthHTML += "<div class='connectivity_Container'>" # open container
 
 $HealthHTML += "<div class='servers'><h2 class='divheader'>Health Monitoring Config</h2><img class='servergraphic' src='$ReplicationGraphicBase64'><div class='serverdivcontent'>"
 $HealthHTML += Get-CsHealthMonitoringConfiguration | Select Identity,FirstTestUserSipUri,FirstTestSamAccountName,SecondTestUserSipUri,SecondTestSamAccountName,TargetFqdn  | ConvertTo-Html -Fragment -as List
@@ -573,7 +598,22 @@ $HealthHTML += BuildCSIMTable
 $HealthHTML += "</div></div>"
   
 
-$HealthHTML += "</div>"
+$HealthHTML += "</div>" # close container
+
+Write-Host
+Write-host "Checking Communications within the environment.." -ForegroundColor Yellow -NoNewline 
+
+$HealthHTML += "<H3>Address Book Check</h3>"
+$HealthHTML += "<h5 class='subtitle'>Tests the Address Book Download Web service by using test users preconfigured for the pool</h5>"
+
+$HealthHTML += "<div class='addressbook_Container'>" # open container
+
+$HealthHTML += "<div class='addressservices'><h2 class='divheader'>Health Monitoring Config</h2><img class='servergraphic' src='$ReplicationGraphicBase64'><div class='serverdivcontent'>"
+$HealthHTML += BuildCSAddressBookTable
+$HealthHTML += "</div></div>"
+  
+
+$HealthHTML += "</div>" # close container
 
 Write-Host " Done!" -ForegroundColor Green 
 
